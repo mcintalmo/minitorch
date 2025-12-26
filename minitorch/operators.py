@@ -128,14 +128,17 @@ def map(
          new list
 
     """
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+
+    def _mapper(elements: Iterable[float]) -> Iterable[float]:
+        return (fn(element) for element in elements)
+
+    return _mapper
 
 
 def negList(ls: Iterable[float]) -> Iterable[float]:
     """Use `map` and `neg` to negate each element in `ls`"""
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+    mapper = map(neg)
+    return mapper(ls)
 
 
 def zipWith(
@@ -153,14 +156,20 @@ def zipWith(
          applying fn(x, y) on each pair of elements.
 
     """
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+
+    def _zipper(ls1: Iterable[float], ls2: Iterable[float]) -> Iterable[float]:
+        return (
+            fn(element_1, element_2)
+            for element_1, element_2 in zip(ls1, ls2, strict=True)
+        )
+
+    return _zipper
 
 
 def addLists(ls1: Iterable[float], ls2: Iterable[float]) -> Iterable[float]:
     """Add the elements of `ls1` and `ls2` using `zipWith` and `add`"""
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+    mapper = zipWith(add)
+    return mapper(ls1, ls2)
 
 
 def reduce(
@@ -179,17 +188,23 @@ def reduce(
          fn(x_1, x_0)))`
 
     """
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+
+    def _reducer(ls: Iterable[float]) -> float:
+        value = start
+        for element in ls:
+            value = fn(element, value)
+        return value
+
+    return _reducer
 
 
 def sum(ls: Iterable[float]) -> float:
     """Sum up a list using `reduce` and `add`."""
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+    reducer = reduce(add, 0)
+    return reducer(ls)
 
 
 def prod(ls: Iterable[float]) -> float:
     """Product of a list using `reduce` and `mul`."""
-    # TODO: Implement for Task 0.3.
-    raise NotImplementedError("Need to implement for Task 0.3")
+    reducer = reduce(mul, 1)
+    return reducer(ls)

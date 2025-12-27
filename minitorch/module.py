@@ -51,8 +51,11 @@ class Module:
 
         """
         params = [(key, value) for key, value in self._parameters.items()]
-        for module in self.modules():
-            params += module.named_parameters()
+        for prefix, module in self._modules.items():
+            params += [
+                (prefix + "." + name, paras)
+                for name, paras in module.named_parameters()
+            ]
         return params
 
     def parameters(self) -> Sequence[Parameter]:

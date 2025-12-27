@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", message=".*torch.classes.*")
+
 from argparse import ArgumentParser
 
 import streamlit as st

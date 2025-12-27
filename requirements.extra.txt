@@ -1,6 +1,7 @@
+altair<5
 datasets
 embeddings
-networkx
+networkx>=3.3
 plotly
 pydot
 python-mnist

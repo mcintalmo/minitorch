@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
 
@@ -20,13 +20,15 @@ from .scalar_functions import (
     Sigmoid,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
 ScalarLike = Union[float, int, "Scalar"]
 
 
 @dataclass
 class ScalarHistory:
-    """
-    `ScalarHistory` stores the history of `Function` operations that was
+    """`ScalarHistory` stores the history of `Function` operations that was
     used to construct the current Variable.
 
     Attributes:
@@ -36,8 +38,8 @@ class ScalarHistory:
 
     """
 
-    last_fn: Optional[Type[ScalarFunction]] = None
-    ctx: Optional[Context] = None
+    last_fn: type[ScalarFunction] | None = None
+    ctx: Context | None = None
     inputs: Sequence[Scalar] = ()
 
 
@@ -48,16 +50,15 @@ _var_count = 0
 
 
 class Scalar:
-    """
-    A reimplementation of scalar values for autodifferentiation
+    """A reimplementation of scalar values for autodifferentiation
     tracking. Scalar Variables behave as close as possible to standard
     Python numbers while also tracking the operations that led to the
     number's creation. They can only be manipulated by
     `ScalarFunction`.
     """
 
-    history: Optional[ScalarHistory]
-    derivative: Optional[float]
+    history: ScalarHistory | None
+    derivative: float | None
     data: float
     unique_id: int
     name: str
@@ -66,7 +67,7 @@ class Scalar:
         self,
         v: float,
         back: ScalarHistory = ScalarHistory(),
-        name: Optional[str] = None,
+        name: str | None = None,
     ):
         global _var_count
         _var_count += 1
@@ -92,31 +93,25 @@ class Scalar:
         return Mul.apply(b, Inv.apply(self))
 
     def __add__(self, b: ScalarLike) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Add.apply(self, b)
 
     def __bool__(self) -> bool:
         return bool(self.data)
 
     def __lt__(self, b: ScalarLike) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return LT.apply(self, b)
 
     def __gt__(self, b: ScalarLike) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return LT.apply(b, self)
 
     def __eq__(self, b: ScalarLike) -> Scalar:  # type: ignore[override]
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return EQ.apply(self, b)
 
     def __sub__(self, b: ScalarLike) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Add.apply(self, -b)
 
     def __neg__(self) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Neg.apply(self)
 
     def __radd__(self, b: ScalarLike) -> Scalar:
         return self + b
@@ -125,30 +120,26 @@ class Scalar:
         return self * b
 
     def log(self) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Log.apply(self)
 
     def exp(self) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Exp.apply(self)
 
     def sigmoid(self) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return Sigmoid.apply(self)
 
     def relu(self) -> Scalar:
-        # TODO: Implement for Task 1.2.
-        raise NotImplementedError('Need to implement for Task 1.2')
+        return ReLU.apply(self)
 
     # Variable elements for backprop
 
     def accumulate_derivative(self, x: Any) -> None:
-        """
-        Add `val` to the the derivative accumulated on this variable.
+        """Add `val` to the the derivative accumulated on this variable.
         Should only be called during autodifferentiation on leaf variables.
 
         Args:
             x: value to be accumulated
+
         """
         assert self.is_leaf(), "Only leaf variables can have derivatives."
         if self.derivative is None:
@@ -156,7 +147,7 @@ class Scalar:
         self.derivative += x
 
     def is_leaf(self) -> bool:
-        "True if this variable created by the user (no `last_fn`)"
+        """True if this variable created by the user (no `last_fn`)"""
         return self.history is not None and self.history.last_fn is None
 
     def is_constant(self) -> bool:
@@ -167,22 +158,22 @@ class Scalar:
         assert self.history is not None
         return self.history.inputs
 
-    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+    def chain_rule(self, d_output: Any) -> Iterable[tuple[Variable, Any]]:
         h = self.history
         assert h is not None
         assert h.last_fn is not None
         assert h.ctx is not None
 
         # TODO: Implement for Task 1.3.
-        raise NotImplementedError('Need to implement for Task 1.3')
+        raise NotImplementedError("Need to implement for Task 1.3")
 
-    def backward(self, d_output: Optional[float] = None) -> None:
-        """
-        Calls autodiff to fill in the derivatives for the history of this object.
+    def backward(self, d_output: float | None = None) -> None:
+        """Calls autodiff to fill in the derivatives for the history of this object.
 
         Args:
             d_output (number, opt): starting derivative to backpropagate through the model
                                    (typically left out, and assumed to be 1.0).
+
         """
         if d_output is None:
             d_output = 1.0
@@ -190,13 +181,14 @@ class Scalar:
 
 
 def derivative_check(f: Any, *scalars: Scalar) -> None:
-    """
-    Checks that autodiff works on a python function.
+    """Checks that autodiff works on a python function.
     Asserts False if derivative is incorrect.
 
-    Parameters:
+    Parameters
+    ----------
         f : function from n-scalars to 1-scalar.
         *scalars  : n input scalar values.
+
     """
     out = f(*scalars)
     out.backward()

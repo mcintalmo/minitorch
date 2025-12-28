@@ -103,7 +103,7 @@ markers = [
 packages = ["minitorch"]
 
 [tool.ruff]
-
+line-length = 79
 exclude = [
     ".git",
     "__pycache__",

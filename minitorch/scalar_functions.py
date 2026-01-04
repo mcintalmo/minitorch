@@ -131,13 +131,11 @@ class Neg(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
-        ctx.save_for_backward(a)
         return operators.neg(a)
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
-        (a,) = ctx.saved_values
-        return operators.neg(a)
+        return -d_output
 
 
 class Sigmoid(ScalarFunction):
@@ -151,7 +149,8 @@ class Sigmoid(ScalarFunction):
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
         (a,) = ctx.saved_values
-        return d_output * operators.sigmoid(a)
+        s = operators.sigmoid(a)
+        return d_output * s * (1 - s)
 
 
 class ReLU(ScalarFunction):

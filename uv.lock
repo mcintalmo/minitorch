@@ -746,8 +746,8 @@ wheels = [
 
 [[package]]
 name = "minitorch"
-version = "0.1.0"
-source = { virtual = "." }
+version = "0.5"
+source = { editable = "." }
 dependencies = [
     { name = "altair" },
     { name = "colorama" },
@@ -803,7 +803,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "minitorch", virtual = "." }]
+dev = [{ name = "minitorch", editable = "." }]
 
 [[package]]
 name = "mpmath"

@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 import random
 from collections.abc import Iterable, Sequence
+from itertools import zip_longest
 from typing import TypeAlias
 
 import numpy as np
@@ -99,8 +100,9 @@ def broadcast_index(
         None
 
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
+    for i in range(len(shape)):
+        big_dim = len(big_shape) - len(shape) + i
+        out_index[i] = big_index[big_dim] if shape[i] > 1 else 0
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -117,8 +119,15 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         IndexingError : if cannot broadcast
 
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError("Need to implement for Task 2.2")
+    dimensions = zip_longest(reversed(shape1), reversed(shape2), fillvalue=1)
+
+    def broadcast_pair(dim1: int, dim2: int) -> int:
+        if dim1 != dim2 and 1 not in (dim1, dim2):
+            raise IndexingError("Cannot broadcast")
+        return max(dim1, dim2)
+
+    broadcast = [broadcast_pair(dim1, dim2) for dim1, dim2 in dimensions]
+    return tuple(reversed(broadcast))
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:

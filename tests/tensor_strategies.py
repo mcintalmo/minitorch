@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from hypothesis import settings
 from hypothesis.strategies import (
     DrawFn,
@@ -27,7 +25,7 @@ def vals(draw: DrawFn, size: int, number: SearchStrategy[float]) -> Tensor:
             number,
             min_size=size,
             max_size=size,
-        )
+        ),
     )
     return minitorch.tensor(pts)
 
@@ -42,13 +40,13 @@ def shapes(draw: DrawFn) -> minitorch.UserShape:
 def tensor_data(
     draw: DrawFn,
     numbers: SearchStrategy[float] = floats(),
-    shape: Optional[UserShape] = None,
+    shape: UserShape | None = None,
 ) -> TensorData:
     if shape is None:
         shape = draw(shapes())
     size = int(minitorch.prod(shape))
     data = draw(lists(numbers, min_size=size, max_size=size))
-    permute: List[int] = draw(permutations(range(len(shape))))
+    permute: list[int] = draw(permutations(range(len(shape))))
     permute_shape = tuple([shape[i] for i in permute])
     z = sorted(enumerate(permute), key=lambda a: a[1])
     reverse_permute = [a[0] for a in z]
@@ -59,18 +57,22 @@ def tensor_data(
 
 
 @composite
-def indices(draw: DrawFn, layout: Tensor) -> UserIndex:
-    return tuple((draw(integers(min_value=0, max_value=s - 1)) for s in layout.shape))
+def indices(draw: DrawFn, layout: Tensor | TensorData) -> UserIndex:
+    return tuple(
+        draw(integers(min_value=0, max_value=s - 1)) for s in layout.shape
+    )
 
 
 @composite
 def tensors(
     draw: DrawFn,
     numbers: SearchStrategy[float] = floats(
-        allow_nan=False, min_value=-100, max_value=100
+        allow_nan=False,
+        min_value=-100,
+        max_value=100,
     ),
-    backend: Optional[TensorBackend] = None,
-    shape: Optional[UserShape] = None,
+    backend: TensorBackend | None = None,
+    shape: UserShape | None = None,
 ) -> Tensor:
     backend = minitorch.SimpleBackend if backend is None else backend
     td = draw(tensor_data(numbers, shape=shape))
@@ -82,10 +84,12 @@ def shaped_tensors(
     draw: DrawFn,
     n: int,
     numbers: SearchStrategy[float] = floats(
-        allow_nan=False, min_value=-100, max_value=100
+        allow_nan=False,
+        min_value=-100,
+        max_value=100,
     ),
-    backend: Optional[TensorBackend] = None,
-) -> List[Tensor]:
+    backend: TensorBackend | None = None,
+) -> list[Tensor]:
     backend = minitorch.SimpleBackend if backend is None else backend
     td = draw(tensor_data(numbers))
     values = []
@@ -93,8 +97,9 @@ def shaped_tensors(
         data = draw(lists(numbers, min_size=td.size, max_size=td.size))
         values.append(
             minitorch.Tensor(
-                minitorch.TensorData(data, td.shape, td.strides), backend=backend
-            )
+                minitorch.TensorData(data, td.shape, td.strides),
+                backend=backend,
+            ),
         )
     return values
 
@@ -103,10 +108,11 @@ def shaped_tensors(
 def matmul_tensors(
     draw: DrawFn,
     numbers: SearchStrategy[float] = floats(
-        allow_nan=False, min_value=-100, max_value=100
+        allow_nan=False,
+        min_value=-100,
+        max_value=100,
     ),
-) -> List[Tensor]:
-
+) -> list[Tensor]:
     i, j, k = [draw(integers(min_value=1, max_value=10)) for _ in range(3)]
 
     l1 = (i, j)

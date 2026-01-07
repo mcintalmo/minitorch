@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
@@ -14,7 +15,7 @@ from .tensor_strategies import indices, tensor_data
 
 @pytest.mark.task2_1
 def test_layout() -> None:
-    "Test basis properties of layout and strides"
+    """Test basis properties of layout and strides"""
     data = [0] * 3 * 5
     tensor_data = minitorch.TensorData(data, (3, 5), (5, 1))
 
@@ -34,7 +35,7 @@ def test_layout() -> None:
 
 @pytest.mark.xfail
 def test_layout_bad() -> None:
-    "Test basis properties of layout and strides"
+    """Test basis properties of layout and strides"""
     data = [0] * 3 * 5
     minitorch.TensorData(data, (3, 5), (6,))
 
@@ -42,7 +43,7 @@ def test_layout_bad() -> None:
 @pytest.mark.task2_1
 @given(tensor_data())
 def test_enumeration(tensor_data: TensorData) -> None:
-    "Test enumeration of tensor_datas."
+    """Test enumeration of tensor_datas."""
     indices = list(tensor_data.indices())
 
     # Check that enough positions are enumerated.
@@ -60,7 +61,7 @@ def test_enumeration(tensor_data: TensorData) -> None:
 @pytest.mark.task2_1
 @given(tensor_data())
 def test_index(tensor_data: TensorData) -> None:
-    "Test enumeration of tensor_data."
+    """Test enumeration of tensor_data."""
     # Check that all indices are within the size.
     for ind in tensor_data.indices():
         pos = tensor_data.index(ind)
@@ -118,6 +119,73 @@ def test_shape_broadcast() -> None:
 
     c = minitorch.shape_broadcast((2, 5), (5,))
     assert c == (2, 5)
+
+
+def test_broadcast_index():
+    """When shapes are the same, index should be unchanged."""
+    big_index = np.array([1, 2, 3], dtype=np.int32)
+    big_shape = np.array([4, 5, 6], dtype=np.int32)
+    shape = np.array([4, 5, 6], dtype=np.int32)
+    out_index = np.zeros(3, dtype=np.int32)
+
+    minitorch.broadcast_index(big_index, big_shape, shape, out_index)
+
+    assert np.array_equal(out_index, [1, 2, 3])
+
+    big_index = np.array([2, 3], dtype=np.int32)
+    big_shape = np.array([5, 6], dtype=np.int32)
+    shape = np.array([1, 6], dtype=np.int32)  # First dimension is 1
+    out_index = np.zeros(2, dtype=np.int32)
+
+    minitorch.broadcast_index(big_index, big_shape, shape, out_index)
+
+    # First dimension maps to 0 (broadcast dimension)
+    # Second dimension stays the same
+    assert np.array_equal(out_index, [0, 3])
+
+    big_index = np.array([1, 2, 3, 4], dtype=np.int32)
+    big_shape = np.array([2, 3, 5, 6], dtype=np.int32)
+    shape = np.array([5, 6], dtype=np.int32)  # Missing first 2 dimensions
+    out_index = np.zeros(2, dtype=np.int32)
+
+    minitorch.broadcast_index(big_index, big_shape, shape, out_index)
+
+    # First two dimensions of big_index are ignored
+    # Last two dimensions map directly
+    assert np.array_equal(out_index, [3, 4])
+
+    big_index = np.array([1, 2, 3, 4], dtype=np.int32)
+    big_shape = np.array([2, 3, 4, 5], dtype=np.int32)
+    shape = np.array([3, 1, 5], dtype=np.int32)
+    out_index = np.zeros(3, dtype=np.int32)
+
+    minitorch.broadcast_index(big_index, big_shape, shape, out_index)
+
+    # Dimension 0 of big (idx=1) is extra → skip
+    # Dimension 1 of big (idx=2) → Dimension 0 of small (idx=2)
+    # Dimension 2 of big (idx=3) → Dimension 1 of small (1 is broadcast) → 0
+    # Dimension 3 of big (idx=4) → Dimension 2 of small (idx=4)
+    assert np.array_equal(out_index, [2, 0, 4])
+
+    big_index = np.array([1, 2, 3], dtype=np.int32)
+    big_shape = np.array([4, 5, 6], dtype=np.int32)
+    shape = np.array([], dtype=np.int32)  # Scalar
+    out_index = np.array([], dtype=np.int32)
+
+    minitorch.broadcast_index(big_index, big_shape, shape, out_index)
+
+    # All dimensions map to nothing (scalar has no dimensions)
+    assert len(out_index) == 0
+
+    big_index = np.array([2, 3, 4], dtype=np.int32)
+    big_shape = np.array([5, 6, 7], dtype=np.int32)
+    shape = np.array([1, 1, 1], dtype=np.int32)
+    out_index = np.zeros(3, dtype=np.int32)
+
+    minitorch.broadcast_index(big_index, big_shape, shape, out_index)
+
+    # All dimensions are broadcast, so all indices map to 0
+    assert np.array_equal(out_index, [0, 0, 0])
 
 
 @given(tensor_data())
